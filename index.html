@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Honden op het strand — Zorghond Mollie</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bosgroen:#2F5D50;
+    --diepgroen:#1F3F37;
+    --mollie-goud:#DFA33C;
+    --zacht-goud:#F3DCAE;
+    --papier:#FBF7EE;
+    --inkt:#2B2620;
+    --stempelrood:#B4543A;
+    --zachtgroen:#E3EDE9;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--papier);color:var(--inkt);font-family:'Nunito Sans',sans-serif;}
+  h1,h2,h3{font-family:'Fraunces',serif;font-weight:600;color:var(--diepgroen);margin:0;}
+  a{color:var(--bosgroen);}
+
+  header{
+    background:var(--diepgroen);
+    color:var(--zacht-goud);
+    padding:28px 24px 22px;
+    text-align:center;
+    border-bottom:4px solid var(--mollie-goud);
+  }
+  header .eyebrow{
+    font-size:0.72rem;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--mollie-goud);
+    font-weight:700;
+    margin-bottom:6px;
+  }
+  header h1{color:var(--papier);font-size:1.9rem;}
+  header p{max-width:640px;margin:10px auto 0;color:var(--zacht-goud);font-size:0.95rem;line-height:1.5;}
+
+  .wrap{max-width:1100px;margin:0 auto;padding:0 18px;}
+
+  .controls{
+    background:var(--papier);
+    border:1px solid var(--zachtgroen);
+    border-radius:14px;
+    margin:-22px auto 18px;
+    padding:18px 20px;
+    max-width:1064px;
+    box-shadow:0 6px 18px rgba(31,63,55,0.08);
+    display:flex;
+    flex-wrap:wrap;
+    gap:18px;
+    align-items:flex-end;
+    position:relative;
+    z-index:400;
+  }
+  .control-group{display:flex;flex-direction:column;gap:6px;}
+  .control-group label{font-size:0.78rem;font-weight:700;color:var(--bosgroen);text-transform:uppercase;letter-spacing:.04em;}
+  input[type=date]{
+    font-family:'Nunito Sans',sans-serif;
+    border:2px solid var(--zachtgroen);
+    border-radius:8px;
+    padding:8px 10px;
+    font-size:0.95rem;
+    color:var(--inkt);
+    background:#fff;
+  }
+  .preset-btns, .time-btns{display:flex;gap:8px;flex-wrap:wrap;}
+  button.chip{
+    font-family:'Nunito Sans',sans-serif;
+    font-weight:700;
+    font-size:0.83rem;
+    border:2px solid var(--bosgroen);
+    background:#fff;
+    color:var(--bosgroen);
+    border-radius:999px;
+    padding:7px 14px;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  button.chip:hover{background:var(--zachtgroen);}
+  button.chip.active{background:var(--bosgroen);color:#fff;}
+  .current-date-display{
+    font-family:'Fraunces',serif;
+    font-size:1.05rem;
+    color:var(--diepgroen);
+    font-weight:600;
+  }
+
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:16px;
+    padding:12px 20px 4px;
+    max-width:1064px;
+    margin:0 auto 16px;
+    font-size:0.85rem;
+    align-items:center;
+  }
+  .legend-item{display:flex;align-items:center;gap:7px;}
+  .dot{width:14px;height:14px;border-radius:50%;display:inline-block;border:2px solid rgba(0,0,0,0.15);}
+  .dot.free{background:var(--bosgroen);}
+  .dot.leash{background:var(--mollie-goud);}
+  .dot.forbidden{background:var(--stempelrood);}
+  .star-legend{color:var(--mollie-goud);font-size:1.1rem;}
+
+  #map{
+    height:560px;
+    width:100%;
+    border-radius:14px;
+    border:1px solid var(--zachtgroen);
+    margin-bottom:8px;
+  }
+  .map-note{font-size:0.8rem;color:#6b6255;margin:0 0 28px;text-align:center;}
+
+  section.feedback, section.about{
+    background:#fff;
+    border:1px solid var(--zachtgroen);
+    border-radius:14px;
+    padding:24px 26px;
+    margin-bottom:28px;
+  }
+  section.about h2, section.feedback h2{margin-bottom:10px;font-size:1.3rem;}
+  section.about p{line-height:1.6;font-size:0.92rem;}
+
+  form.feedback-form{display:flex;flex-direction:column;gap:12px;margin-top:14px;}
+  form.feedback-form label{font-size:0.82rem;font-weight:700;color:var(--bosgroen);}
+  form.feedback-form input, form.feedback-form select, form.feedback-form textarea{
+    font-family:'Nunito Sans',sans-serif;
+    border:2px solid var(--zachtgroen);
+    border-radius:8px;
+    padding:9px 11px;
+    font-size:0.92rem;
+    width:100%;
+  }
+  form.feedback-form textarea{min-height:90px;resize:vertical;}
+  .submit-btn{
+    align-self:flex-start;
+    background:var(--stempelrood);
+    color:#fff;
+    border:none;
+    border-radius:999px;
+    padding:11px 22px;
+    font-weight:700;
+    font-size:0.95rem;
+    cursor:pointer;
+    font-family:'Nunito Sans',sans-serif;
+  }
+  .submit-btn:hover{background:#963f2c;}
+
+  .leaflet-popup-content-wrapper{
+    border-radius:10px;
+    font-family:'Nunito Sans',sans-serif;
+  }
+  .popup-title{font-family:'Fraunces',serif;font-weight:600;font-size:1.05rem;color:var(--diepgroen);margin:0 0 4px;}
+  .popup-status{
+    display:inline-block;
+    font-size:0.75rem;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.03em;
+    padding:3px 9px;
+    border-radius:999px;
+    color:#fff;
+    margin-bottom:8px;
+  }
+  .popup-status.free{background:var(--bosgroen);}
+  .popup-status.leash{background:var(--mollie-goud);color:var(--inkt);}
+  .popup-status.forbidden{background:var(--stempelrood);}
+  .popup-note{font-size:0.85rem;line-height:1.45;margin:0 0 8px;}
+  .popup-source{font-size:0.78rem;}
+
+  footer{text-align:center;padding:20px;font-size:0.78rem;color:#8a8071;}
+
+  @media (max-width:640px){
+    header h1{font-size:1.5rem;}
+    .controls{margin-top:-14px;padding:14px;}
+    #map{height:460px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Zorghond Mollie · praktische gids</div>
+  <h1>🐾 Honden op het strand</h1>
+  <p>Overzicht van de Belgische kust, Zeeland en Zuid-Holland: waar, wanneer en hoe je hond welkom is. Kies een datum en tijdstip — de kaart toont meteen wat er op dat moment geldt.</p>
+</header>
+
+<div class="wrap">
+
+  <div class="controls">
+    <div class="control-group">
+      <label for="datePicker">Datum</label>
+      <input type="date" id="datePicker">
+    </div>
+    <div class="control-group">
+      <label>Snelkeuze</label>
+      <div class="preset-btns">
+        <button class="chip" data-preset="today">Vandaag</button>
+        <button class="chip" data-preset="summer">Hoogseizoen (15 jul)</button>
+        <button class="chip" data-preset="winter">Laagseizoen (15 jan)</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <label>Tijdstip</label>
+      <div class="time-btns">
+        <button class="chip" data-time="dag">Overdag</button>
+        <button class="chip" data-time="vroeglaat">Vroeg / laat</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <span class="current-date-display" id="currentDateDisplay"></span>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><span class="dot free"></span> Vrij loslopen</div>
+    <div class="legend-item"><span class="dot leash"></span> Toegestaan aan de leiband</div>
+    <div class="legend-item"><span class="dot forbidden"></span> Niet toegestaan</div>
+    <div class="legend-item"><span class="star-legend">★</span> Permanent hondenstrand / losloopzone</div>
+  </div>
+
+  <div id="map"></div>
+  <p class="map-note">Regels wijzigen jaarlijks per gemeente — controleer altijd de bebording bij de strandopgang. Zie een fout? Laat het weten via het feedbackformulier hieronder.</p>
+
+  <section class="feedback">
+    <h2>Klopt iets niet (meer)?</h2>
+    <p style="font-size:0.9rem;line-height:1.5;">Regels veranderen weleens, en we checken deze lijst niet dagelijks bij elke gemeente. Zag je ter plaatse iets anders dan hier staat? Laat het ons weten — dan zoeken we het uit.</p>
+    <form class="feedback-form" id="feedbackForm">
+      <div>
+        <label for="fbBeach">Strand / zone</label>
+        <select id="fbBeach"></select>
+      </div>
+      <div>
+        <label for="fbMessage">Wat klopt er niet, of wat wil je aanvullen?</label>
+        <textarea id="fbMessage" placeholder="Bv. deze zone is nu het hele jaar aangelijnd, niet alleen in de zomer..."></textarea>
+      </div>
+      <div>
+        <label for="fbName">Naam (optioneel)</label>
+        <input type="text" id="fbName" placeholder="Je naam">
+      </div>
+      <button type="submit" class="submit-btn">Verstuur feedback</button>
+    </form>
+  </section>
+
+  <section class="about">
+    <h2>Over dit overzicht</h2>
+    <p>Deze gids is samengesteld op basis van gemeentelijke informatie en gespecialiseerde bronnen over hondvriendelijke stranden in België en Nederland. Regels verschillen sterk per gemeente en per strandzone, en veranderen soms van jaar tot jaar. Gebruik deze kaart als richtlijn en controleer altijd de borden ter plaatse voor je de lijn losmaakt.</p>
+  </section>
+
+</div>
+
+<footer>Gemaakt voor Zorghond Mollie · zorghond.be</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/* ---------- DATA ---------- */
+// season: [ [startMonth,startDay], [endMonth,endDay] ]
+// dayStatus / offHoursStatus / winterStatus: 'free' | 'leash' | 'forbidden'
+const beaches = [
+// ---- BELGISCHE KUST ----
+{name:"De Panne — Zone 1 (Canadezenplein–Koksijde)", region:"BE", lat:51.0975, lng:2.5870, dogBeach:false,
+ season:[[6,1],[9,15]], dayStatus:"leash", offHoursStatus:"leash", winterStatus:"leash", hours:"hele jaar",
+ note:"Hele jaar aangelijnd verplicht, ook buiten het seizoen.", source:"https://www.depanne.be/honden-op-het-strand"},
+{name:"De Panne — Zone 3 (De Rampe–zeilwagencentrum)", region:"BE", lat:51.0940, lng:2.5790, dogBeach:false,
+ season:[[6,1],[9,15]], dayStatus:"leash", offHoursStatus:"leash", winterStatus:"leash", hours:"hele jaar",
+ note:"Hele jaar aangelijnd verplicht.", source:"https://www.depanne.be/honden-op-het-strand"},
+{name:"De Panne — Zone 4 (richting Frankrijk)", region:"BE", lat:51.0865, lng:2.5640, dogBeach:true,
+ season:[[6,15],[9,15]], dayStatus:"leash", offHoursStatus:"free", winterStatus:"free", hours:"10:30–18:30",
+ note:"Zomer: 10:30–18:30 aangelijnd, daarbuiten los. Rest van het jaar hele dag los.", source:"https://www.depanne.be/honden-op-het-strand"},
+{name:"Koksijde / Sint-Idesbald", region:"BE", lat:51.1150, lng:2.6430, dogBeach:true,
+ season:[[6,1],[9,15]], dayStatus:"leash", offHoursStatus:"leash", winterStatus:"leash", hours:"hele jaar",
+ note:"Permanente hondenzone (samen met Oostduinkerke ±40% van het strand). In Koksijde geldt overal aanlijnplicht, het hele jaar.", source:"https://www.koksijde.be"},
+{name:"Oostduinkerke (Koksijde)", region:"BE", lat:51.1310, lng:2.6870, dogBeach:true,
+ season:[[6,1],[9,15]], dayStatus:"leash", offHoursStatus:"leash", winterStatus:"leash", hours:"hele jaar",
+ note:"Permanente hondenzone, altijd aan de leiband. Buiten seizoen mag overal op het strand (aangelijnd).", source:"https://www.koksijde.be"},
+{name:"Nieuwpoort — hoofdstrand", region:"BE", lat:51.1440, lng:2.7260, dogBeach:false,
+ season:[[6,15],[9,15]], dayStatus:"forbidden", offHoursStatus:"forbidden", winterStatus:"leash", hours:"volledig verboden",
+ note:"Strengste gemeente aan de kust: 15 juni–15 september volledig verboden, ook 's ochtends en 's avonds. Hondenlosloopweide (2.500 m²) bij Prins Mauritspark is hele jaar open.", source:"https://www.nieuwpoort.be"},
+{name:"Westende (Middelkerke)", region:"BE", lat:51.1690, lng:2.7760, dogBeach:false,
+ season:[[6,1],[9,15]], dayStatus:"forbidden", offHoursStatus:"forbidden", winterStatus:"leash", hours:"volledig verboden in badseizoen",
+ note:"Grotendeels verboden tijdens badseizoen, behalve in de zone richting Middelkerke.", source:"https://www.middelkerke.be"},
+{name:"Middelkerke — Zone 1 (Carlton–Oostende)", region:"BE", lat:51.1850, lng:2.8280, dogBeach:true,
+ season:[[6,15],[9,15]], dayStatus:"free", offHoursStatus:"free", winterStatus:"free", hours:"hele jaar",
+ note:"Permanente losloopzone, ook tijdens het hoogseizoen volledig vrij.", source:"https://www.middelkerke.be"},
+{name:"Middelkerke — Zone 2 & 3 (Louis Logierlaan / Cristal Palace)", region:"BE", lat:51.1800, lng:2.8150, dogBeach:true,
+ season:[[6,15],[9,15]], dayStatus:"leash", offHoursStatus:"leash", winterStatus:"leash", hours:"hele jaar",
+ note:"Permanente hondenzones, altijd aan de leiband (max. 10 m).", source:"https://www.middelkerke.be"},
+{name:"Bredene — permanente zone Westlaan–Middelkerke", region:"BE", lat:51.2280, lng:2.9550, dogBeach:true,
+ season:[[6,1],[9,15]], dayStatus:"free", offHoursStatus:"free", winterStatus:"free", hours:"hele jaar, dag en nacht",
+ note:"Hele jaar, dag en nacht toegankelijk voor loslopende honden.", source:"https://www.bredene.be"},
+{name:"Bredene — overig strand", region:"BE", lat:51.2400, lng:2.9750, dogBeach:false,
+ season:[[4,1],[9,30]], dayStatus:"forbidden", offHoursStatus:"free", winterStatus:"free", hours:"apr–jun/sep: voor 10:00/na 18:30 · jul–aug: voor 10:00/na 20:00",
+ note:"Buiten de genoemde uren verboden in het seizoen. Buiten het seizoen hele dag vrij.", source:"https://www.bredene.be"},
+{name:"Oostende — permanente hondenzones (Oosteroever e.a.)", region:"BE", lat:51.2400, lng:2.9000, dogBeach:true,
+ season:[[6,1],[9,15]], dayStatus:"leash", offHoursStatus:"leash", winterStatus:"leash", hours:"hele jaar, dag en nacht",
+ note:"Drie permanente hondenzones (Oosteroever, Klein Strand, Westlaan), hele jaar dag en nacht toegankelijk, wel aangelijnd.", source:"https://www.oostende.be"},
+{name:"Oostende — hoofdstrand", region:"BE", lat:51.2260, lng:2.9200, dogBeach:false,
+ season:[[4,1],[9,30]], dayStatus:"forbidden", offHoursStatus:"free", winterStatus:"free", hours:"apr–jun/sep: voor 10:00/na 18:30 · jul–aug: voor 10:00/na 20:00",
+ note:"Meest hondvriendelijke grote badstad: okt–mrt hele dag vrij, in het seizoen enkel vroeg/laat.", source:"https://www.oostende.be"},
+{name:"De Haan — hondenzones", region:"BE", lat:51.2700, lng:3.0250, dogBeach:true,
+ season:[[6,1],[9,15]], dayStatus:"leash", offHoursStatus:"leash", winterStatus:"free", hours:"hele jaar",
+ note:"Twee permanente hondenzones. Van 16 sep–31 mei is het hele strand vrij voor loslopende honden.", source:"https://www.dehaan.be"},
+{name:"Wenduine (De Haan)", region:"BE", lat:51.2870, lng:3.0550, dogBeach:false,
+ season:[[6,1],[9,15]], dayStatus:"leash", offHoursStatus:"leash", winterStatus:"free", hours:"hele jaar",
+ note:"Valt onder De Haan, zelfde regels. Duingebied richting Blankenberge toegankelijk voor honden.", source:"https://www.dehaan.be"},
+{name:"Blankenberge — oostkant (Westerstaketsel–De Haan)", region:"BE", lat:51.3200, lng:3.1550, dogBeach:true,
+ season:[[6,1],[9,15]], dayStatus:"free", offHoursStatus:"free", winterStatus:"free", hours:"hele jaar",
+ note:"Permanente losloopzone, hele jaar vrij loslopen.", source:"https://www.blankenberge.be"},
+{name:"Blankenberge — westkant", region:"BE", lat:51.3080, lng:3.1180, dogBeach:false,
+ season:[[4,1],[9,15]], dayStatus:"forbidden", offHoursStatus:"forbidden", winterStatus:"leash", hours:"verboden paasvakantie–15 sept",
+ note:"Verboden van de paasvakantie tot 15 september.", source:"https://www.blankenberge.be"},
+{name:"Zeebrugge — groene zone", region:"BE", lat:51.3350, lng:3.1950, dogBeach:true,
+ season:[[3,15],[10,15]], dayStatus:"leash", offHoursStatus:"leash", winterStatus:"free", hours:"hele jaar",
+ note:"Hele jaar toegankelijk; 15 mrt–15 okt aangelijnd, daarbuiten vrij.", source:"https://www.brugge.be"},
+{name:"Zeebrugge — rode zone", region:"BE", lat:51.3400, lng:3.2050, dogBeach:false,
+ season:[[3,15],[10,15]], dayStatus:"forbidden", offHoursStatus:"forbidden", winterStatus:"leash", hours:"verboden 15 mrt–15 okt",
+ note:"15 mrt–15 okt verboden, daarbuiten aangelijnd toegestaan.", source:"https://www.brugge.be"},
+{name:"Knokke-Heist — hoofdstrand", region:"BE", lat:51.3400, lng:3.2650, dogBeach:false,
+ season:[[3,15],[10,15]], dayStatus:"forbidden", offHoursStatus:"free", winterStatus:"free", hours:"verboden 10:00–20:00",
+ note:"15 mrt–15 okt verboden 10:00–20:00, daarbuiten vrij zonder leiband. 16 okt–14 mrt hele dag vrij.", source:"https://www.knokke-heist.be/honden-op-het-strand"},
+{name:"Knokke — Het Zoute", region:"BE", lat:51.3550, lng:3.2950, dogBeach:true,
+ season:[[1,1],[12,31]], dayStatus:"free", offHoursStatus:"free", winterStatus:"free", hours:"hele jaar, dag en nacht",
+ note:"Enige zone in Knokke-Heist zonder tijdsbeperking: hele jaar, dag en nacht vrij loslopen.", source:"https://www.knokke-heist.be/honden-op-het-strand"},
+
+// ---- ZEELAND ----
+{name:"Cadzand-Bad", region:"ZE", lat:51.3780, lng:3.3920, dogBeach:false,
+ season:[[5,1],[10,1]], dayStatus:"leash", offHoursStatus:"free", winterStatus:"free", hours:"voor 10:00 / na 18:00 los",
+ note:"Zomer: voor 10:00 en na 18:00 los, daartussen aangelijnd. Winter: hele dag los.", source:"https://www.sluis.nl"},
+{name:"Breskens", region:"ZE", lat:51.4000, lng:3.5450, dogBeach:false,
+ season:[[1,1],[12,31]], dayStatus:"leash", offHoursStatus:"leash", winterStatus:"leash", hours:"hele jaar",
+ note:"Hele jaar welkom, maar altijd aangelijnd. Geen seizoensverbod.", source:"https://www.sluis.nl"},
+{name:"Vlissingen — boulevardstrand / Nollestrand", region:"ZE", lat:51.4480, lng:3.5720, dogBeach:false,
+ season:[[4,15],[9,15]], dayStatus:"forbidden", offHoursStatus:"forbidden", winterStatus:"free", hours:"verboden 15 apr–15 sept",
+ note:"17 sep–30 apr overal onaangelijnd welkom op alle stranden.", source:"https://www.vlissingen.nl/hond-op-het-strand"},
+{name:"Westkapelle", region:"ZE", lat:51.5260, lng:3.4400, dogBeach:true,
+ season:[[1,1],[12,31]], dayStatus:"free", offHoursStatus:"free", winterStatus:"free", hours:"hele jaar",
+ note:"Aangewezen hondenstrand, hele jaar vrij loslopen. Meeste zonuren van Zeeland.", source:"https://www.veere.nl"},
+{name:"Domburg", region:"ZE", lat:51.5630, lng:3.4990, dogBeach:false,
+ season:[[5,15],[9,15]], dayStatus:"forbidden", offHoursStatus:"free", winterStatus:"free", hours:"voor 10:00 / na 19:00 los",
+ note:"15 mei–15 sept overdag verboden. Voor 10:00 en na 19:00 wel los. Daarbuiten hele dag vrij.", source:"https://www.veere.nl"},
+{name:"Oostkapelle (Hoogduin / Westhoven / Berkenbosch)", region:"ZE", lat:51.5800, lng:3.5500, dogBeach:true,
+ season:[[1,1],[12,31]], dayStatus:"free", offHoursStatus:"free", winterStatus:"free", hours:"hele jaar",
+ note:"Drie strandgedeeltes hele jaar welkom voor honden.", source:"https://www.veere.nl"},
+{name:"Vrouwenpolder", region:"ZE", lat:51.5960, lng:3.6100, dogBeach:false,
+ season:[[5,15],[9,15]], dayStatus:"leash", offHoursStatus:"free", winterStatus:"free", hours:"badseizoen aangelijnd",
+ note:"Buiten badseizoen grotendeels vrij, in badseizoen aangelijnd.", source:"https://www.noord-beveland.nl"},
+{name:"Banjaard / Kamperland", region:"ZE", lat:51.5950, lng:3.7180, dogBeach:true,
+ season:[[4,1],[10,1]], dayStatus:"leash", offHoursStatus:"leash", winterStatus:"free", hours:"1 apr–1 okt aangelijnd op het strand",
+ note:"Losloopgebied hele jaar vrij; op het strand zelf geldt 1 apr–1 okt aanlijnplicht.", source:"https://www.noord-beveland.nl"},
+{name:"Westenschouwen / De Punt", region:"ZE", lat:51.6800, lng:3.6900, dogBeach:true,
+ season:[[1,1],[12,31]], dayStatus:"free", offHoursStatus:"free", winterStatus:"free", hours:"hele jaar",
+ note:"Permanent losloopgebied met uitzicht op de Oosterscheldekering, hele jaar vrij.", source:"https://www.schouwen-duiveland.nl"},
+{name:"Burgh-Haamstede / Renesse", region:"ZE", lat:51.7250, lng:3.7100, dogBeach:false,
+ season:[[5,15],[9,15]], dayStatus:"leash", offHoursStatus:"free", winterStatus:"free", hours:"voor 10:00 / na 19:00 los",
+ note:"15 mei–15 sept: alleen los voor 10:00 en na 19:00. Daarbuiten hele dag vrij.", source:"https://www.schouwen-duiveland.nl"},
+{name:"Scharendijke / Brouwersdam", region:"ZE", lat:51.7700, lng:3.8400, dogBeach:false,
+ season:[[5,1],[10,1]], dayStatus:"leash", offHoursStatus:"free", winterStatus:"free", hours:"vroege ochtend / na 19:00",
+ note:"Zomer: vroege ochtend en na 19:00 welkom. Okt–apr hele dag los.", source:"https://www.schouwen-duiveland.nl"},
+
+// ---- ZUID-HOLLAND ----
+{name:"Hoek van Holland", region:"ZH", lat:51.9800, lng:4.1200, dogBeach:false,
+ season:[[5,1],[9,1]], dayStatus:"leash", offHoursStatus:"free", winterStatus:"free", hours:"na 19:00 los tot 9:00",
+ note:"1 mei–1 sep: na 19:00 los tot 9:00 's ochtends. 1 okt–30 apr: hele strand losloopgebied.", source:"https://www.rotterdam.nl"},
+{name:"Monster / Ter Heijde (Molenslag)", region:"ZH", lat:52.0100, lng:4.1350, dogBeach:true,
+ season:[[1,1],[12,31]], dayStatus:"free", offHoursStatus:"free", winterStatus:"free", hours:"hele jaar",
+ note:"Hele jaar loslopen, grenst aan de Zandmotor (Nationaal Park Hollandse Duinen).", source:"https://www.gemeentewestland.nl"},
+{name:"Kijkduin (Den Haag) — permanente zones", region:"ZH", lat:52.0700, lng:4.2200, dogBeach:true,
+ season:[[1,1],[12,31]], dayStatus:"free", offHoursStatus:"free", winterStatus:"free", hours:"hele jaar, dag en nacht",
+ note:"Permanente hondenstrandzones bij strandopgang 2 en 9–10, hele jaar dag en nacht vrij.", source:"https://www.denhaag.nl/nl/natuur-en-milieu/honden-zeehonden-en-paarden-op-het-strand/"},
+{name:"Zuiderstrand Den Haag — overig", region:"ZH", lat:52.0850, lng:4.2500, dogBeach:false,
+ season:[[5,15],[10,1]], dayStatus:"forbidden", offHoursStatus:"forbidden", winterStatus:"free", hours:"zomer overdag verboden",
+ note:"1 okt–15 mei hele dag los. In de zomer overdag verboden op het overige Zuiderstrand.", source:"https://www.denhaag.nl/nl/natuur-en-milieu/honden-zeehonden-en-paarden-op-het-strand/"},
+{name:"Noorderstrand (Den Haag)", region:"ZH", lat:52.1100, lng:4.2800, dogBeach:true,
+ season:[[1,1],[12,31]], dayStatus:"free", offHoursStatus:"free", winterStatus:"free", hours:"hele jaar",
+ note:"Permanente zone vanaf Zwarte Pad tot de grens met Wassenaar, hele jaar vrij.", source:"https://www.denhaag.nl/nl/natuur-en-milieu/honden-zeehonden-en-paarden-op-het-strand/"},
+{name:"Wassenaar (strandpalen 91–92)", region:"ZH", lat:52.1500, lng:4.3400, dogBeach:true,
+ season:[[1,1],[12,31]], dayStatus:"free", offHoursStatus:"free", winterStatus:"free", hours:"hele jaar",
+ note:"Aangewezen hondenstrand, hele jaar los. Let op: 15 mrt–15 aug aanlijnplicht in duingebied Berkheide (broedende vogels).", source:"https://www.wassenaar.nl"},
+{name:"Katwijk aan Zee", region:"ZH", lat:52.2020, lng:4.3980, dogBeach:false,
+ season:[[4,1],[10,1]], dayStatus:"leash", offHoursStatus:"free", winterStatus:"free", hours:"voor 9:00 / na 19:00 los",
+ note:"1 apr–1 okt: alleen los voor 9:00 en na 19:00. Rest van het jaar hele dag vrij.", source:"https://www.katwijk.nl"},
+{name:"Noordwijk — Hondenstrand", region:"ZH", lat:52.2500, lng:4.4300, dogBeach:true,
+ season:[[1,1],[12,31]], dayStatus:"free", offHoursStatus:"free", winterStatus:"free", hours:"hele jaar",
+ note:"Grootste losloopstrand van Nederland (2,5 km, tot grens Katwijk). Hele jaar en ook in het hoogseizoen vrij.", source:"https://www.noordwijk.nl/onderwerp/wonen-en-leefomgeving/strand/regels-honden-op-het-strand/"},
+{name:"Noordwijk — overig strand", region:"ZH", lat:52.2400, lng:4.4200, dogBeach:false,
+ season:[[6,1],[8,31]], dayStatus:"forbidden", offHoursStatus:"forbidden", winterStatus:"free", hours:"verboden 1 jun–31 aug",
+ note:"1 jun–31 aug verboden op de strandgedeeltes voor de boulevards. Daarbuiten vrij.", source:"https://www.noordwijk.nl/onderwerp/wonen-en-leefomgeving/strand/regels-honden-op-het-strand/"},
+{name:"Rockanje", region:"ZH", lat:51.8800, lng:4.0400, dogBeach:true,
+ season:[[1,1],[12,31]], dayStatus:"free", offHoursStatus:"free", winterStatus:"free", hours:"hele jaar",
+ note:"Permanente losloopzones (strandpaal 11–11,6 en 13,4–16), ook in het hoogseizoen los. Enige zuidgerichte strand van Nederland.", source:"https://www.voorneaanzee.nl"},
+{name:"Oostvoorne", region:"ZH", lat:51.9200, lng:4.0700, dogBeach:true,
+ season:[[1,1],[12,31]], dayStatus:"free", offHoursStatus:"free", winterStatus:"free", hours:"hele jaar",
+ note:"Vrijwel het hele strand hele jaar los, behalve een klein vogelbroedgebied (aanlijnplicht).", source:"https://www.voorneaanzee.nl"},
+];
+
+/* ---------- STATUS ENGINE ---------- */
+function monthDay(d){ return d.getMonth()*100 + d.getDate() + 1; } // getMonth 0-based
+function toMD(pair){ return (pair[0]-1)*100 + pair[1] + 1; }
+
+function isWithinSeason(date, season){
+  const md = monthDay(date);
+  const start = toMD(season[0]);
+  const end = toMD(season[1]);
+  if(start <= end){ return md >= start && md <= end; }
+  return md >= start || md <= end; // wraps around new year (not currently used but safe)
+}
+
+function computeStatus(beach, date, timeOfDay){
+  if(isWithinSeason(date, beach.season)){
+    return timeOfDay === "dag" ? beach.dayStatus : beach.offHoursStatus;
+  }
+  return beach.winterStatus;
+}
+
+const statusLabels = {free:"Vrij loslopen", leash:"Toegestaan aan de leiband", forbidden:"Niet toegestaan"};
+
+/* ---------- MAP SETUP ---------- */
+const map = L.map('map', {scrollWheelZoom:true}).setView([51.55, 3.4], 8);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  attribution:'&copy; OpenStreetMap &copy; CARTO',
+  maxZoom:19
+}).addTo(map);
+
+let markers = [];
+
+function colorFor(status){
+  if(status === "free") return getCss('--bosgroen');
+  if(status === "leash") return getCss('--mollie-goud');
+  return getCss('--stempelrood');
+}
+function getCss(varName){
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}
+
+function renderMarkers(){
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+  const date = new Date(datePicker.value + "T12:00:00");
+  const timeOfDay = currentTime;
+
+  beaches.forEach(b => {
+    const status = computeStatus(b, date, timeOfDay);
+    const color = colorFor(status);
+    const radius = b.dogBeach ? 10 : 7;
+    const marker = L.circleMarker([b.lat, b.lng], {
+      radius: radius,
+      fillColor: color,
+      color: b.dogBeach ? "#DFA33C" : "#ffffff",
+      weight: b.dogBeach ? 3 : 1.5,
+      fillOpacity: 0.92
+    }).addTo(map);
+
+    const starBadge = b.dogBeach ? " ★" : "";
+    marker.bindPopup(`
+      <div>
+        <p class="popup-title">${b.name}${starBadge}</p>
+        <span class="popup-status ${status}">${statusLabels[status]}</span>
+        <p class="popup-note">${b.note}</p>
+        <p class="popup-source"><a href="${b.source}" target="_blank" rel="noopener">Bron / gemeente ›</a></p>
+      </div>
+    `);
+    markers.push(marker);
+  });
+}
+
+/* ---------- CONTROLS ---------- */
+const datePicker = document.getElementById('datePicker');
+const currentDateDisplay = document.getElementById('currentDateDisplay');
+let currentTime = "dag";
+
+function formatDisplayDate(dateStr){
+  const d = new Date(dateStr + "T12:00:00");
+  return d.toLocaleDateString('nl-BE', {weekday:'long', day:'numeric', month:'long'});
+}
+
+function todayISO(){
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+
+datePicker.value = todayISO();
+currentDateDisplay.textContent = formatDisplayDate(datePicker.value);
+
+datePicker.addEventListener('change', () => {
+  currentDateDisplay.textContent = formatDisplayDate(datePicker.value);
+  clearPresetActive();
+  renderMarkers();
+});
+
+document.querySelectorAll('[data-preset]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    clearPresetActive();
+    btn.classList.add('active');
+    const year = new Date().getFullYear();
+    if(btn.dataset.preset === "today"){ datePicker.value = todayISO(); }
+    if(btn.dataset.preset === "summer"){ datePicker.value = `${year}-07-15`; }
+    if(btn.dataset.preset === "winter"){ datePicker.value = `${year}-01-15`; }
+    currentDateDisplay.textContent = formatDisplayDate(datePicker.value);
+    renderMarkers();
+  });
+});
+function clearPresetActive(){
+  document.querySelectorAll('[data-preset]').forEach(b => b.classList.remove('active'));
+}
+
+document.querySelectorAll('[data-time]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-time]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentTime = btn.dataset.time;
+    renderMarkers();
+  });
+});
+document.querySelector('[data-time="dag"]').classList.add('active');
+
+/* ---------- FEEDBACK FORM ---------- */
+const fbBeach = document.getElementById('fbBeach');
+beaches.forEach((b, i) => {
+  const opt = document.createElement('option');
+  opt.value = i;
+  opt.textContent = b.name;
+  fbBeach.appendChild(opt);
+});
+
+document.getElementById('feedbackForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const beachName = beaches[fbBeach.value].name;
+  const message = document.getElementById('fbMessage').value;
+  const name = document.getElementById('fbName').value || "Anoniem";
+  const subject = encodeURIComponent(`Feedback hondenstranden-kaart: ${beachName}`);
+  const body = encodeURIComponent(`Strand/zone: ${beachName}\n\nOpmerking:\n${message}\n\n— ${name}`);
+  window.location.href = `mailto:info@zorghond.be?subject=${subject}&body=${body}`;
+});
+
+/* ---------- INIT ---------- */
+renderMarkers();
+</script>
+</body>
+</html>
