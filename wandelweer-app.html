@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<title>Wandelweer — Zorghond Mollie</title>
+
+<!-- App / home-screen -->
+<meta name="theme-color" content="#1F3F37">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Wandelweer">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Crect width='180' height='180' rx='40' fill='%231F3F37'/%3E%3Ctext x='50%25' y='54%25' font-size='96' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%90%BE%3C/text%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,900&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bosgroen:#2F5D50; --diepgroen:#1F3F37; --mollie-goud:#DFA33C;
+    --zacht-goud:#F3DCAE; --papier:#FBF7EE; --inkt:#2B2620;
+    --stempelrood:#B4543A; --zachtgroen:#E3EDE9; --midgroen:#6DA08C; --dieprood:#8E3A28;
+    --safe-top:env(safe-area-inset-top,0px);
+    --safe-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;font-family:'Nunito Sans',sans-serif;color:var(--inkt);
+    background:#d9d2c4;overscroll-behavior-y:none;}
+  h1,h2,h3{font-family:'Fraunces',serif;margin:0;color:var(--diepgroen);}
+  button{font-family:'Nunito Sans',sans-serif;cursor:pointer;border:none;background:none;}
+
+  /* ---- App shell ---- */
+  .app{
+    max-width:460px;margin:0 auto;min-height:100vh;min-height:100dvh;
+    background:var(--papier);position:relative;display:flex;flex-direction:column;
+    box-shadow:0 0 40px rgba(31,63,55,0.18);overflow:hidden;
+  }
+  @media(min-width:480px){
+    body{padding:0;}
+    .app{margin-top:0;min-height:100dvh;border-radius:0;}
+  }
+
+  /* ---- App bar ---- */
+  .appbar{
+    background:var(--diepgroen);color:var(--papier);
+    padding:calc(var(--safe-top) + 14px) 18px 14px;
+    position:sticky;top:0;z-index:30;
+    border-bottom:3px solid var(--mollie-goud);
+  }
+  .appbar-top{display:flex;align-items:center;justify-content:space-between;}
+  .appbar-brand{font-size:0.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--mollie-goud);font-weight:800;}
+  .appbar h1{color:var(--papier);font-size:1.25rem;font-weight:900;margin-top:2px;}
+  .loc-pill{
+    display:flex;align-items:center;gap:6px;background:rgba(251,247,238,0.14);
+    color:var(--zacht-goud);border-radius:999px;padding:8px 14px;font-weight:700;font-size:0.85rem;
+    max-width:170px;
+  }
+  .loc-pill span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+  /* ---- Scroll area ---- */
+  .scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px calc(84px + var(--safe-bottom));}
+
+  /* ---- Empty / prompt state ---- */
+  .prompt{text-align:center;padding:48px 20px;}
+  .prompt .big-emoji{font-size:3rem;}
+  .prompt h2{font-size:1.4rem;margin:14px 0 8px;}
+  .prompt p{color:#6b6255;font-size:0.95rem;line-height:1.5;margin:0 auto 22px;max-width:280px;}
+  .btn-primary{
+    background:var(--bosgroen);color:#fff;border-radius:999px;padding:14px 26px;
+    font-weight:800;font-size:1rem;box-shadow:0 6px 16px rgba(47,93,80,0.28);
+  }
+  .btn-primary:active{transform:scale(0.97);}
+
+  .status-msg{text-align:center;color:#6b6255;font-size:0.9rem;padding:8px 0;min-height:1em;}
+  .status-msg.error{color:var(--stempelrood);font-weight:700;}
+
+  /* ---- Hero (huidig weer) ---- */
+  .hero{
+    background:linear-gradient(160deg,var(--bosgroen),var(--diepgroen));
+    color:var(--papier);border-radius:22px;padding:22px 22px 20px;margin-bottom:16px;
+    position:relative;overflow:hidden;
+  }
+  .hero::after{content:"";position:absolute;right:-30px;top:-30px;width:150px;height:150px;
+    background:radial-gradient(circle,rgba(223,163,60,0.22),transparent 70%);}
+  .hero .place{font-weight:700;font-size:0.9rem;color:var(--zacht-goud);display:flex;align-items:center;gap:6px;}
+  .hero .main{display:flex;align-items:center;gap:10px;margin:6px 0 4px;}
+  .hero .main .emoji{font-size:3.2rem;line-height:1;}
+  .hero .main .temp{font-family:'Fraunces',serif;font-weight:900;font-size:3.4rem;line-height:1;}
+  .hero .desc{font-size:1rem;color:var(--papier);font-weight:700;}
+  .hero .sub{display:flex;gap:16px;margin-top:12px;font-size:0.82rem;color:var(--zacht-goud);}
+  .hero .sub b{color:var(--papier);font-weight:800;}
+
+  /* ---- Beste moment card (stamp signature) ---- */
+  .best{
+    background:#fff;border:1px solid var(--zachtgroen);border-radius:22px;
+    padding:18px;margin-bottom:16px;display:flex;gap:16px;align-items:center;
+  }
+  .stamp{
+    flex:0 0 auto;width:104px;height:104px;border-radius:50%;
+    border:3px dashed var(--mollie-goud);display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;
+    background:radial-gradient(circle at center,#fff 58%,var(--zacht-goud) 100%);
+    box-shadow:inset 0 0 0 5px rgba(223,163,60,0.12);
+  }
+  .stamp .paw{font-size:1rem;}
+  .stamp .time{font-family:'Fraunces',serif;font-weight:900;font-size:1.55rem;color:var(--diepgroen);line-height:1;}
+  .stamp .label{font-size:0.55rem;letter-spacing:.1em;text-transform:uppercase;color:var(--stempelrood);font-weight:800;margin-top:3px;}
+  .best-body{flex:1;min-width:0;}
+  .best-body .kicker{font-size:0.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mollie-goud);font-weight:800;}
+  .best-body h3{font-size:1.1rem;margin:2px 0 6px;}
+  .best-body .verdict{display:inline-block;font-weight:800;font-size:0.72rem;text-transform:uppercase;
+    letter-spacing:.03em;padding:3px 10px;border-radius:999px;color:#fff;margin-bottom:6px;}
+  .best-body p{font-size:0.85rem;line-height:1.45;margin:0;color:var(--inkt);}
+
+  /* ---- Section ---- */
+  .sec-title{font-size:0.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--bosgroen);
+    font-weight:800;margin:0 0 10px 4px;}
+
+  /* ---- Hourly ribbon ---- */
+  .ribbon-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -16px 16px;padding:0 16px;}
+  .ribbon{display:flex;gap:9px;min-width:min-content;}
+  .hour{flex:0 0 auto;width:64px;border-radius:16px;padding:11px 6px 9px;text-align:center;
+    background:#fff;border:1px solid var(--zachtgroen);}
+  .hour.best{border:2px solid var(--mollie-goud);box-shadow:0 4px 12px rgba(223,163,60,0.3);}
+  .hour .hr{font-weight:800;font-size:0.8rem;}
+  .hour .emoji{font-size:1.35rem;margin:4px 0;}
+  .hour .temp{font-family:'Fraunces',serif;font-weight:600;font-size:0.95rem;color:var(--diepgroen);}
+  .hour .bar{height:6px;border-radius:999px;margin-top:8px;background:var(--zachtgroen);overflow:hidden;}
+  .hour .bar span{display:block;height:100%;border-radius:999px;}
+
+  .legend{display:flex;flex-wrap:wrap;gap:10px 14px;margin:0 0 18px 4px;font-size:0.78rem;}
+  .legend-item{display:flex;align-items:center;gap:6px;}
+  .swatch{width:12px;height:12px;border-radius:4px;display:inline-block;}
+
+  /* ---- Tips card ---- */
+  .tips{background:var(--zachtgroen);border-radius:18px;padding:16px 18px;margin-bottom:8px;}
+  .tips h3{font-size:1rem;margin-bottom:8px;}
+  .tips ul{margin:0;padding-left:18px;font-size:0.85rem;line-height:1.55;}
+  .tips .src{color:#6b6255;font-size:0.75rem;margin:8px 0 0;}
+
+  /* ---- Bottom nav ---- */
+  .bottomnav{
+    position:absolute;bottom:0;left:0;right:0;z-index:30;
+    background:#fff;border-top:1px solid var(--zachtgroen);
+    padding:8px 0 calc(8px + var(--safe-bottom));
+    display:flex;justify-content:space-around;
+  }
+  .navbtn{display:flex;flex-direction:column;align-items:center;gap:2px;color:#9a9184;font-weight:700;font-size:0.68rem;text-decoration:none;padding:2px 20px;}
+  .navbtn .ico{font-size:1.25rem;}
+  .navbtn.active{color:var(--bosgroen);}
+
+  /* ---- Location bottom sheet ---- */
+  .sheet-backdrop{
+    position:fixed;inset:0;background:rgba(31,38,32,0.5);z-index:50;opacity:0;pointer-events:none;
+    transition:opacity .25s ease;
+  }
+  .sheet-backdrop.open{opacity:1;pointer-events:auto;}
+  .sheet{
+    position:fixed;left:0;right:0;bottom:0;z-index:60;max-width:460px;margin:0 auto;
+    background:var(--papier);border-radius:24px 24px 0 0;padding:10px 20px calc(24px + var(--safe-bottom));
+    transform:translateY(110%);transition:transform .3s cubic-bezier(.2,.8,.2,1);
+  }
+  .sheet.open{transform:translateY(0);}
+  .sheet .grip{width:44px;height:5px;border-radius:999px;background:#d8d0c0;margin:6px auto 16px;}
+  .sheet h2{font-size:1.2rem;margin-bottom:14px;}
+  .sheet input[type=text]{width:100%;border:2px solid var(--zachtgroen);border-radius:12px;
+    padding:14px;font-size:1rem;font-family:'Nunito Sans',sans-serif;margin-bottom:12px;background:#fff;}
+  .sheet input[type=text]:focus{outline:3px solid var(--zacht-goud);border-color:var(--mollie-goud);}
+  .sheet-actions{display:flex;flex-direction:column;gap:10px;}
+  .btn-block{width:100%;border-radius:12px;padding:14px;font-weight:800;font-size:1rem;text-align:center;}
+  .btn-block.solid{background:var(--bosgroen);color:#fff;}
+  .btn-block.ghost{background:#fff;color:var(--bosgroen);border:2px solid var(--bosgroen);}
+  .btn-block:active{transform:scale(0.98);}
+
+  .spinner{width:26px;height:26px;border:3px solid var(--zachtgroen);border-top-color:var(--bosgroen);
+    border-radius:50%;animation:spin .8s linear infinite;margin:20px auto;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="appbar">
+    <div class="appbar-top">
+      <div>
+        <div class="appbar-brand">Zorghond Mollie</div>
+        <h1>Wandelweer</h1>
+      </div>
+      <button class="loc-pill" id="locPill">📍 <span id="locPillText">Kies locatie</span></button>
+    </div>
+  </div>
+
+  <div class="scroll" id="scroll">
+
+    <!-- Prompt state -->
+    <div class="prompt" id="promptState">
+      <div class="big-emoji">🐾</div>
+      <h2>Klaar voor een wandeling?</h2>
+      <p>Kies je locatie en we tonen meteen het beste moment van vandaag om met je hond op stap te gaan.</p>
+      <button class="btn-primary" id="promptBtn">Kies je locatie</button>
+    </div>
+
+    <div class="status-msg" id="statusMsg"></div>
+
+    <!-- Results -->
+    <div id="results" style="display:none;">
+      <div class="hero" id="hero"></div>
+
+      <p class="sec-title">Beste moment vandaag</p>
+      <div class="best">
+        <div class="stamp">
+          <span class="paw">🐾</span>
+          <span class="time" id="bestTime">–</span>
+          <span class="label">beste uur</span>
+        </div>
+        <div class="best-body">
+          <div class="kicker" id="bestKicker">Vandaag</div>
+          <h3>Op pad om <span id="bestTimeInline">–</span></h3>
+          <span class="verdict" id="bestVerdict">–</span>
+          <p id="bestReason">–</p>
+        </div>
+      </div>
+
+      <p class="sec-title">Per uur</p>
+      <div class="ribbon-scroll"><div class="ribbon" id="ribbon"></div></div>
+
+      <div class="legend">
+        <div class="legend-item"><span class="swatch" style="background:#2F5D50"></span>Ideaal</div>
+        <div class="legend-item"><span class="swatch" style="background:#6DA08C"></span>Prima</div>
+        <div class="legend-item"><span class="swatch" style="background:#DFA33C"></span>Matig</div>
+        <div class="legend-item"><span class="swatch" style="background:#B4543A"></span>Opletten</div>
+        <div class="legend-item"><span class="swatch" style="background:#8E3A28"></span>Vermijden</div>
+      </div>
+
+      <div class="tips">
+        <h3>Denk aan de pootjes</h3>
+        <ul>
+          <li>Bij warmte kan de stoep te heet zijn — leg je handrug 7 sec op het asfalt als test.</li>
+          <li>Warm weer? Kort houden, schaduw kiezen en water meenemen.</li>
+          <li>Pups, oudere en kortsnuitige honden hebben sneller last van hitte.</li>
+        </ul>
+        <p class="src">Weer via Open-Meteo · richtlijn, geen vervanging van je eigen inschatting.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <nav class="bottomnav">
+    <a class="navbtn active" href="#" aria-current="page"><span class="ico">🌤️</span>Weer</a>
+    <a class="navbtn" href="index.html"><span class="ico">🗺️</span>Stranden</a>
+  </nav>
+</div>
+
+<!-- Location sheet -->
+<div class="sheet-backdrop" id="backdrop"></div>
+<div class="sheet" id="sheet" role="dialog" aria-label="Locatie kiezen">
+  <div class="grip"></div>
+  <h2>Waar ga je wandelen?</h2>
+  <input type="text" id="locInput" placeholder="Plaats, bv. Gierle, Knokke…" autocomplete="off" enterkeyhint="search">
+  <div class="sheet-actions">
+    <button class="btn-block solid" id="searchBtn">Zoek plaats</button>
+    <button class="btn-block ghost" id="geoBtn">📍 Gebruik mijn locatie</button>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const backdrop=$('backdrop'), sheet=$('sheet'), locInput=$('locInput');
+const results=$('results'), promptState=$('promptState'), statusMsg=$('statusMsg');
+
+/* ---- Sheet control ---- */
+function openSheet(){ backdrop.classList.add('open'); sheet.classList.add('open'); setTimeout(()=>locInput.focus(),300); }
+function closeSheet(){ backdrop.classList.remove('open'); sheet.classList.remove('open'); locInput.blur(); }
+$('locPill').addEventListener('click',openSheet);
+$('promptBtn').addEventListener('click',openSheet);
+backdrop.addEventListener('click',closeSheet);
+
+/* ---- Weather code → emoji + label ---- */
+function weatherInfo(code,isDay){
+  const m={0:["Helder",isDay?"☀️":"🌙"],1:["Overwegend helder",isDay?"🌤️":"🌙"],2:["Half bewolkt","⛅"],
+  3:["Bewolkt","☁️"],45:["Mist","🌫️"],48:["Mist","🌫️"],51:["Motregen","🌦️"],53:["Motregen","🌦️"],
+  55:["Motregen","🌦️"],56:["IJzel","🌧️"],57:["IJzel","🌧️"],61:["Lichte regen","🌧️"],63:["Regen","🌧️"],
+  65:["Zware regen","🌧️"],66:["IJzel","🌧️"],67:["IJzel","🌧️"],71:["Lichte sneeuw","❄️"],73:["Sneeuw","❄️"],
+  75:["Zware sneeuw","❄️"],77:["Sneeuwkorrels","❄️"],80:["Buien","🌦️"],81:["Buien","🌦️"],82:["Zware buien","⛈️"],
+  85:["Sneeuwbuien","🌨️"],86:["Sneeuwbuien","🌨️"],95:["Onweer","⛈️"],96:["Onweer + hagel","⛈️"],99:["Onweer + hagel","⛈️"]};
+  return m[code]||["Wisselend","🌥️"];
+}
+
+/* ---- Scoring ---- */
+function scoreHour(h){
+  let s=100; const at=h.apparent;
+  if(at>30)s-=78;else if(at>28)s-=56;else if(at>25)s-=38;else if(at>22)s-=20;else if(at>19)s-=8;
+  if(at<-8)s-=42;else if(at<-3)s-=24;else if(at<1)s-=12;else if(at<4)s-=5;
+  if(h.precip>=3)s-=35;else if(h.precip>=1)s-=22;else if(h.precip>=0.3)s-=12;
+  else if(h.precipProb>=60)s-=9;else if(h.precipProb>=40)s-=4;
+  if(h.wind>=55)s-=26;else if(h.wind>=38)s-=15;else if(h.wind>=26)s-=6;
+  if(h.uv>=8)s-=9;else if(h.uv>=6)s-=4;
+  return Math.max(0,Math.min(100,Math.round(s)));
+}
+function category(s){
+  if(s>=80)return{label:"Ideaal",color:"#2F5D50"};
+  if(s>=60)return{label:"Prima",color:"#6DA08C"};
+  if(s>=40)return{label:"Matig",color:"#DFA33C"};
+  if(s>=20)return{label:"Opletten",color:"#B4543A"};
+  return{label:"Vermijden",color:"#8E3A28"};
+}
+function reasonFor(h,s){
+  const at=h.apparent;
+  if(at>28)return"Te warm voor de meeste honden — risico op oververhitting en verbrande pootjes. Liever vroeg of laat, kort en met water.";
+  if(at>25)return"Warm — het asfalt kan te heet zijn voor de pootjes. Houd het kort, kies schaduw en neem water mee.";
+  if(h.precip>=1||h.precipProb>=60)return"Kans op stevige regen. Prima voor waterliefhebbers, minder voor de rest.";
+  if(h.wind>=38)return"Stevige wind — voor kleine of kortharige honden minder aangenaam.";
+  if(at<-3)return"Koud — voor kortharige of kleine honden eventueel een jasje, en let op strooizout.";
+  if(at<1)return"Fris — houd het comfortabel, vooral voor gevoelige honden.";
+  if(s>=80)return"Aangenaam wandelweer. Geniet ervan!";
+  if(s>=60)return"Prima om te wandelen, weinig op- of aanmerkingen.";
+  return"Redelijk wandelweer — houd rekening met de omstandigheden.";
+}
+
+/* ---- API ---- */
+async function geocode(name){
+  const r=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=1&language=nl&format=json`);
+  if(!r.ok)throw new Error("Zoeken mislukt");
+  const d=await r.json();
+  if(!d.results||!d.results.length)throw new Error("Plaats niet gevonden");
+  const x=d.results[0];
+  return{lat:x.latitude,lng:x.longitude,name:[x.name,x.admin1].filter(Boolean).join(", ")};
+}
+async function getForecast(lat,lng,place){
+  const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}`
+    +`&hourly=temperature_2m,apparent_temperature,precipitation,precipitation_probability,wind_speed_10m,uv_index,weather_code,is_day`
+    +`&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,is_day`
+    +`&timezone=auto&forecast_days=1&wind_speed_unit=kmh`;
+  const r=await fetch(url);
+  if(!r.ok)throw new Error("Weer ophalen mislukt");
+  render(await r.json(),place);
+}
+
+/* ---- Render ---- */
+function render(data,place){
+  const H=data.hourly, nowHour=data.current.time.slice(0,13);
+  let start=H.time.findIndex(t=>t.slice(0,13)>=nowHour); if(start<0)start=0;
+  const hours=[];
+  for(let i=start;i<H.time.length;i++){
+    const h={time:H.time[i],hourLabel:H.time[i].slice(11,16),temp:Math.round(H.temperature_2m[i]),
+      apparent:H.apparent_temperature[i],precip:H.precipitation[i]??0,
+      precipProb:H.precipitation_probability?(H.precipitation_probability[i]??0):0,
+      wind:H.wind_speed_10m[i],uv:H.uv_index?(H.uv_index[i]??0):0,code:H.weather_code[i],isDay:H.is_day[i]};
+    h.score=scoreHour(h); hours.push(h);
+  }
+  if(!hours.length){showError("Geen uurgegevens voor vandaag.");return;}
+  let best=hours[0]; hours.forEach(h=>{if(h.score>best.score)best=h;});
+
+  const c=data.current, [cl,ce]=weatherInfo(c.weather_code,c.is_day);
+  $('hero').innerHTML=`
+    <div class="place">📍 ${place}</div>
+    <div class="main"><span class="emoji">${ce}</span><span class="temp">${Math.round(c.temperature_2m)}°</span></div>
+    <div class="desc">${cl}</div>
+    <div class="sub"><span>Voelt als <b>${Math.round(c.apparent_temperature)}°</b></span><span>Wind <b>${Math.round(c.wind_speed_10m)} km/u</b></span></div>`;
+
+  const bc=category(best.score);
+  $('bestTime').textContent=best.hourLabel; $('bestTimeInline').textContent=best.hourLabel;
+  const bv=$('bestVerdict'); bv.textContent=bc.label; bv.style.background=bc.color;
+  bv.style.color=(bc.label==="Matig")?"#2B2620":"#fff";
+  $('bestReason').textContent=reasonFor(best,best.score);
+
+  const rib=$('ribbon'); rib.innerHTML="";
+  hours.forEach(h=>{
+    const cat=category(h.score),[,em]=weatherInfo(h.code,h.isDay);
+    const el=document.createElement('div');
+    el.className="hour"+(h.time===best.time?" best":"");
+    el.innerHTML=`<div class="hr">${h.hourLabel}</div><div class="emoji">${em}</div>
+      <div class="temp">${h.temp}°</div><div class="bar"><span style="width:${h.score}%;background:${cat.color}"></span></div>`;
+    rib.appendChild(el);
+  });
+
+  promptState.style.display="none";
+  results.style.display="block";
+  statusMsg.textContent=""; statusMsg.className="status-msg";
+  $('locPillText').textContent=place;
+  $('scroll').scrollTop=0;
+}
+
+/* ---- Flow ---- */
+function showLoading(m){promptState.style.display="none";results.style.display="none";
+  statusMsg.className="status-msg";statusMsg.innerHTML=`<div class="spinner"></div>${m||"Laden…"}`;}
+function showError(m){statusMsg.className="status-msg error";statusMsg.textContent=m;
+  if(results.style.display!=="block")promptState.style.display="block";}
+
+async function searchByName(){
+  const n=locInput.value.trim();
+  if(!n){locInput.focus();return;}
+  closeSheet();
+  try{showLoading("Locatie zoeken…");const l=await geocode(n);
+    showLoading(`Weer ophalen voor ${l.name}…`);await getForecast(l.lat,l.lng,l.name);}
+  catch(e){showError(e.message||"Er ging iets mis.");}
+}
+function searchByGeo(){
+  if(!navigator.geolocation){showError("Je toestel ondersteunt geen locatiebepaling.");return;}
+  closeSheet(); showLoading("Je locatie bepalen…");
+  navigator.geolocation.getCurrentPosition(async p=>{
+    try{showLoading("Weer ophalen…");await getForecast(p.coords.latitude,p.coords.longitude,"Jouw locatie");}
+    catch(e){showError(e.message||"Er ging iets mis.");}
+  },()=>showError("Kon je locatie niet ophalen. Typ anders een plaats in."),{timeout:10000});
+}
+$('searchBtn').addEventListener('click',searchByName);
+$('geoBtn').addEventListener('click',searchByGeo);
+locInput.addEventListener('keydown',e=>{if(e.key==="Enter")searchByName();});
+</script>
+</body>
+</html>
